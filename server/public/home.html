@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#070a0f" />
+    <meta
+      name="description"
+      content="Rex 2048：在 Rex 播放器里用选集面板操作的 2048。服务端实时渲染棋盘，支持多人独立棋局、硬件编码和 Docker 部署。"
+    />
+    <title>Rex 2048 · 用播放器选集玩 2048</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #070a0f;
+        --bg-soft: #0b111a;
+        --panel: #101824;
+        --panel-2: #141e2c;
+        --line: rgba(148, 163, 184, 0.16);
+        --line-strong: rgba(148, 163, 184, 0.28);
+        --text: #f2f6fb;
+        --muted: #91a0b6;
+        --muted-2: #6d7d93;
+        --mint: #5ee0a0;
+        --mint-soft: rgba(94, 224, 160, 0.14);
+        --gold: #edc22e;
+        --orange: #f59563;
+        --pink: #ff7b9c;
+        --blue: #5aa9e6;
+        --violet: #a78bfa;
+        --max: 1160px;
+        --radius: 22px;
+        font-family:
+          "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+          "PingFang SC", "Hiragino Sans GB", "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 14% -8%, rgba(44, 91, 130, 0.42), transparent 34%),
+          radial-gradient(circle at 96% 8%, rgba(104, 65, 142, 0.25), transparent 30%),
+          radial-gradient(circle at 50% 110%, rgba(28, 91, 66, 0.16), transparent 38%),
+          var(--bg);
+        color: var(--text);
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-image:
+          linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+        background-size: 44px 44px;
+        mask-image: linear-gradient(to bottom, black, transparent 78%);
+        content: "";
+        pointer-events: none;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .shell {
+        width: min(var(--max), calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 24px 0;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 12px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.16), transparent 45%),
+          linear-gradient(145deg, #d9a91f, #b87913);
+        box-shadow:
+          0 8px 24px rgba(237, 194, 46, 0.22),
+          inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        color: #241b05;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+
+      .brand-text {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        line-height: 1.1;
+      }
+
+      .brand-text small {
+        color: var(--muted-2);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .nav-links a {
+        transition: color 160ms ease;
+      }
+
+      .nav-links a:hover {
+        color: var(--text);
+      }
+
+      .nav-links .nav-cta {
+        padding: 9px 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.03fr) minmax(360px, 0.97fr);
+        gap: clamp(36px, 7vw, 86px);
+        align-items: center;
+        padding: clamp(36px, 7vw, 86px) 0 74px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 7px 11px;
+        border: 1px solid rgba(94, 224, 160, 0.24);
+        border-radius: 999px;
+        background: var(--mint-soft);
+        color: #a7f3cf;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .eyebrow-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--mint);
+        box-shadow: 0 0 0 4px rgba(94, 224, 160, 0.12);
+      }
+
+      h1 {
+        max-width: 720px;
+        margin: 20px 0 22px;
+        font-size: clamp(46px, 7.2vw, 86px);
+        font-weight: 850;
+        letter-spacing: -0.065em;
+        line-height: 0.94;
+      }
+
+      h1 .gradient {
+        background: linear-gradient(100deg, #fff3c4 0%, var(--gold) 38%, var(--orange) 70%, var(--pink) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .lead {
+        max-width: 590px;
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(16px, 1.8vw, 19px);
+        line-height: 1.75;
+      }
+
+      .lead strong {
+        color: var(--text);
+        font-weight: 650;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        margin-top: 30px;
+      }
+
+      .btn {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 0 18px;
+        border: 1px solid transparent;
+        border-radius: 13px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 750;
+        letter-spacing: -0.01em;
+        transition:
+          transform 160ms ease,
+          border-color 160ms ease,
+          background 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #79efb7, var(--mint));
+        box-shadow:
+          0 14px 36px rgba(94, 224, 160, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        color: #06120c;
+      }
+
+      .btn-primary:hover {
+        box-shadow:
+          0 18px 44px rgba(94, 224, 160, 0.28),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      }
+
+      .btn-primary.is-disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+        transform: none;
+      }
+
+      .btn-ghost {
+        border-color: var(--line-strong);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--text);
+      }
+
+      .btn-ghost:hover {
+        border-color: rgba(148, 163, 184, 0.48);
+        background: rgba(255, 255, 255, 0.065);
+      }
+
+      .btn svg {
+        width: 17px;
+        height: 17px;
+        flex: none;
+      }
+
+      .import-note {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 22px;
+        margin-top: 14px;
+        color: var(--muted-2);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .import-note .status-dot {
+        width: 7px;
+        height: 7px;
+        flex: none;
+        border-radius: 50%;
+        background: var(--muted-2);
+      }
+
+      .import-note.is-ready .status-dot {
+        background: var(--mint);
+        box-shadow: 0 0 0 4px rgba(94, 224, 160, 0.1);
+      }
+
+      .import-note.is-error .status-dot {
+        background: var(--pink);
+        box-shadow: 0 0 0 4px rgba(255, 123, 156, 0.1);
+      }
+
+      .module-address {
+        display: flex;
+        max-width: 590px;
+        align-items: center;
+        gap: 8px;
+        margin-top: 18px;
+        padding: 9px 10px 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(8, 13, 21, 0.72);
+        color: var(--muted-2);
+        font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .module-address code {
+        min-width: 0;
+        overflow: hidden;
+        flex: 1;
+        color: #b9d7ff;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .module-address button {
+        flex: none;
+        padding: 5px 8px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      .module-address button:hover {
+        border-color: var(--line-strong);
+        color: var(--text);
+      }
+
+      .hero-visual {
+        position: relative;
+        isolation: isolate;
+      }
+
+      .hero-visual::before {
+        position: absolute;
+        inset: 8% -7% -8% 7%;
+        z-index: -1;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(94, 224, 160, 0.16), transparent 68%);
+        filter: blur(18px);
+        content: "";
+      }
+
+      .game-frame {
+        position: relative;
+        padding: 17px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 28px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 38%),
+          linear-gradient(160deg, #1a2433, #0c121b 62%);
+        box-shadow:
+          0 34px 90px rgba(0, 0, 0, 0.46),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      }
+
+      .game-top,
+      .game-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .game-top {
+        padding: 1px 4px 13px;
+      }
+
+      .mini-brand {
+        color: #dbe7f7;
+        font-size: 13px;
+        font-weight: 850;
+        letter-spacing: 0.13em;
+      }
+
+      .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+      }
+
+      .live-badge::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--mint);
+        box-shadow: 0 0 0 4px rgba(94, 224, 160, 0.1);
+        content: "";
+      }
+
+      .score-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 9px;
+      }
+
+      .score-box {
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(7, 11, 17, 0.58);
+      }
+
+      .score-box span {
+        display: block;
+        color: var(--muted-2);
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+      }
+
+      .score-box strong {
+        display: block;
+        margin-top: 2px;
+        color: var(--text);
+        font-size: 22px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.04em;
+      }
+
+      .preview-board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: clamp(6px, 1.5vw, 10px);
+        padding: clamp(8px, 1.6vw, 12px);
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        border-radius: 19px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.018), transparent),
+          #090e16;
+      }
+
+      .tile {
+        display: grid;
+        aspect-ratio: 1;
+        place-items: center;
+        border-radius: 12px;
+        color: #2b2620;
+        font-size: clamp(14px, 3.2vw, 27px);
+        font-weight: 850;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.06em;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        animation: tile-in 520ms both;
+        animation-delay: calc(var(--i, 0) * 22ms);
+      }
+
+      @keyframes tile-in {
+        from {
+          opacity: 0;
+          transform: scale(0.72);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .tile-empty {
+        background: #1a2330;
+        box-shadow: none;
+      }
+
+      .tile-2 {
+        background: #eee4da;
+      }
+
+      .tile-4 {
+        background: #ede0c8;
+      }
+
+      .tile-8 {
+        background: #f2b179;
+        color: #fffaf2;
+      }
+
+      .tile-16 {
+        background: #f59563;
+        color: #fffaf2;
+      }
+
+      .tile-32 {
+        background: #f67c5f;
+        color: #fffaf2;
+      }
+
+      .tile-64 {
+        background: #f65e3b;
+        color: #fffaf2;
+      }
+
+      .tile-128 {
+        background: #edcf72;
+        color: #fffaf2;
+        font-size: clamp(12px, 2.7vw, 23px);
+      }
+
+      .tile-256 {
+        background: #edcc61;
+        color: #fffaf2;
+        font-size: clamp(12px, 2.7vw, 23px);
+      }
+
+      .tile-512 {
+        background: #edc850;
+        color: #fffaf2;
+        font-size: clamp(12px, 2.7vw, 23px);
+      }
+
+      .tile-1024 {
+        background: #edc53f;
+        color: #fffaf2;
+        font-size: clamp(10px, 2.3vw, 19px);
+      }
+
+      .tile-2048 {
+        background: linear-gradient(145deg, #ffe27a, var(--gold));
+        box-shadow:
+          0 0 28px rgba(237, 194, 46, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        color: #2b2620;
+        font-size: clamp(10px, 2.3vw, 19px);
+      }
+
+      .game-bottom {
+        padding: 14px 3px 0;
+        color: var(--muted-2);
+        font-size: 11px;
+      }
+
+      .episode-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 9px;
+        border: 1px solid rgba(94, 224, 160, 0.2);
+        border-radius: 999px;
+        background: rgba(94, 224, 160, 0.08);
+        color: #a7f3cf;
+        font-weight: 700;
+      }
+
+      .episode-chip::before {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--mint);
+        content: "";
+      }
+
+      .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .hero-stat {
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(16, 24, 36, 0.58);
+      }
+
+      .hero-stat strong {
+        display: block;
+        color: var(--text);
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+
+      .hero-stat span {
+        display: block;
+        margin-top: 3px;
+        color: var(--muted-2);
+        font-size: 10px;
+      }
+
+      .section {
+        padding: 68px 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 28px;
+        margin-bottom: 28px;
+      }
+
+      .section-head > div {
+        max-width: 700px;
+      }
+
+      .kicker {
+        margin: 0 0 9px;
+        color: var(--mint);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 44px);
+        font-weight: 820;
+        letter-spacing: -0.045em;
+        line-height: 1.06;
+      }
+
+      .section-intro {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .section-aside {
+        color: var(--muted-2);
+        font-size: 12px;
+        line-height: 1.6;
+        text-align: right;
+      }
+
+      .controls-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr);
+        gap: 18px;
+      }
+
+      .episode-table {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(16, 24, 36, 0.7);
+      }
+
+      .episode-row {
+        display: grid;
+        grid-template-columns: 64px 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 13px 18px;
+        border-top: 1px solid var(--line);
+      }
+
+      .episode-row:first-child {
+        border-top: 0;
+      }
+
+      .episode-key {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--line-strong);
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .episode-name {
+        color: var(--text);
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .episode-desc {
+        margin-top: 2px;
+        color: var(--muted-2);
+        font-size: 12px;
+      }
+
+      .episode-tag {
+        padding: 5px 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .episode-row.is-accent .episode-key {
+        border-color: rgba(237, 194, 46, 0.35);
+        background: rgba(237, 194, 46, 0.1);
+        color: #ffe27a;
+      }
+
+      .episode-row.is-accent .episode-tag {
+        border-color: rgba(237, 194, 46, 0.24);
+        color: #ffe27a;
+      }
+
+      .how-card {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        padding: 22px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background:
+          radial-gradient(circle at 100% 0%, rgba(94, 224, 160, 0.1), transparent 38%),
+          rgba(16, 24, 36, 0.7);
+      }
+
+      .how-card h3 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+
+      .how-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .step-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .step-list li {
+        display: grid;
+        grid-template-columns: 25px 1fr;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .step-num {
+        display: grid;
+        width: 25px;
+        height: 25px;
+        place-items: center;
+        border: 1px solid rgba(94, 224, 160, 0.24);
+        border-radius: 50%;
+        background: rgba(94, 224, 160, 0.08);
+        color: #a7f3cf;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .step-list strong {
+        display: block;
+        margin-bottom: 2px;
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .feature-card {
+        min-height: 160px;
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(16, 24, 36, 0.62);
+        transition:
+          transform 180ms ease,
+          border-color 180ms ease,
+          background 180ms ease;
+      }
+
+      .feature-card:hover {
+        border-color: var(--line-strong);
+        background: rgba(20, 30, 44, 0.8);
+        transform: translateY(-2px);
+      }
+
+      .feature-icon {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--mint);
+        font-size: 15px;
+        font-weight: 800;
+      }
+
+      .feature-card h3 {
+        margin: 16px 0 7px;
+        font-size: 15px;
+        letter-spacing: -0.02em;
+      }
+
+      .feature-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .deploy-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .deploy-card {
+        padding: 21px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(16, 24, 36, 0.7);
+      }
+
+      .deploy-card h3 {
+        margin: 0;
+        font-size: 17px;
+        letter-spacing: -0.025em;
+      }
+
+      .deploy-card p {
+        margin: 8px 0 15px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .terminal {
+        position: relative;
+        overflow: hidden;
+        padding: 13px 14px;
+        border: 1px solid rgba(94, 224, 160, 0.14);
+        border-radius: 11px;
+        background: #080d14;
+        color: #b9d7ff;
+        font: 12px/1.65 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .terminal::before {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--muted-2);
+        font-size: 10px;
+        content: "Terminal";
+      }
+
+      .terminal code {
+        display: block;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .deploy-note {
+        margin-top: 12px;
+        color: var(--muted-2);
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .deploy-note code {
+        color: #b9d7ff;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .import-section {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 0.72fr);
+        gap: 26px;
+        align-items: center;
+        padding: 30px;
+        border: 1px solid rgba(94, 224, 160, 0.2);
+        border-radius: 26px;
+        background:
+          radial-gradient(circle at 0% 0%, rgba(94, 224, 160, 0.12), transparent 38%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.04), transparent 45%),
+          rgba(12, 20, 29, 0.86);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+      }
+
+      .import-section h2 {
+        max-width: 600px;
+      }
+
+      .import-section p {
+        max-width: 600px;
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .import-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        align-items: stretch;
+      }
+
+      .import-actions .btn {
+        width: 100%;
+      }
+
+      .import-actions small {
+        color: var(--muted-2);
+        font-size: 11px;
+        line-height: 1.55;
+        text-align: center;
+      }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 28px 0 42px;
+        color: var(--muted-2);
+        font-size: 11px;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .footer a:hover {
+        color: var(--text);
+      }
+
+      .toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 20;
+        max-width: min(360px, calc(100vw - 48px));
+        padding: 12px 15px;
+        border: 1px solid var(--line-strong);
+        border-radius: 11px;
+        background: rgba(16, 24, 36, 0.96);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.36);
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.5;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition:
+          opacity 160ms ease,
+          transform 160ms ease;
+      }
+
+      .toast.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      @media (max-width: 940px) {
+        .hero,
+        .controls-layout,
+        .import-section {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          gap: 40px;
+        }
+
+        .hero-visual {
+          width: min(100%, 560px);
+          margin: 0 auto;
+        }
+
+        .feature-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .section-head {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .section-aside {
+          text-align: left;
+        }
+      }
+
+      @media (max-width: 680px) {
+        .shell {
+          width: min(var(--max), calc(100% - 28px));
+        }
+
+        .nav-links {
+          display: none;
+        }
+
+        .hero {
+          padding-top: 28px;
+        }
+
+        h1 {
+          font-size: clamp(44px, 14vw, 64px);
+        }
+
+        .actions,
+        .import-actions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .btn {
+          width: 100%;
+        }
+
+        .hero-stats,
+        .feature-grid,
+        .deploy-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .episode-row {
+          grid-template-columns: 48px 1fr;
+        }
+
+        .episode-tag {
+          display: none;
+        }
+
+        .import-section {
+          padding: 22px;
+        }
+
+        .footer {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="shell nav">
+      <a class="brand" href="#top" aria-label="Rex 2048 首页">
+        <span class="brand-mark">2048</span>
+        <span class="brand-text">
+          Rex 2048
+          <small>Episode-controlled puzzle</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="页面导航">
+        <a href="#how">玩法</a>
+        <a href="#features">特性</a>
+        <a href="#deploy">部署</a>
+        <a class="nav-cta" href="#install">导入 Rex</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="shell hero">
+        <div>
+          <span class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Rex 模块 · 选集即操作
+          </span>
+          <h1>
+            把 2048<br />
+            放进<span class="gradient">播放器</span>里
+          </h1>
+          <p class="lead">
+            Rex 2048 是一个把经典数字合并游戏带进 Rex 的实验。棋盘由服务端实时渲染成视频，
+            <strong>播放器里的选集面板就是控制器</strong>，不需要手柄、键盘映射或额外客户端。
+          </p>
+
+          <div class="actions">
+            <a class="btn btn-primary" id="import-rex" href="#install">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              导入到 Rex
+            </a>
+            <button class="btn btn-ghost" id="copy-module" type="button">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="8" y="8" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.7" />
+                <path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              </svg>
+              复制模块地址
+            </button>
+          </div>
+
+          <div class="import-note" id="module-status">
+            <span class="status-dot"></span>
+            <span>正在检查模块文件…</span>
+          </div>
+
+          <div class="module-address">
+            <code id="module-url">/module/rex-2048.js</code>
+            <button id="copy-module-small" type="button">复制</button>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-label="Rex 2048 棋盘预览">
+          <div class="game-frame">
+            <div class="game-top">
+              <span class="mini-brand">REX 2048</span>
+              <span class="live-badge">实时棋盘</span>
+            </div>
+            <div class="score-row">
+              <div class="score-box">
+                <span>SCORE</span>
+                <strong>36,868</strong>
+              </div>
+              <div class="score-box">
+                <span>BEST</span>
+                <strong>65,536</strong>
+              </div>
+            </div>
+            <div class="preview-board">
+              <div class="tile tile-2048" style="--i: 0">2048</div>
+              <div class="tile tile-1024" style="--i: 1">1024</div>
+              <div class="tile tile-512" style="--i: 2">512</div>
+              <div class="tile tile-256" style="--i: 3">256</div>
+              <div class="tile tile-128" style="--i: 4">128</div>
+              <div class="tile tile-64" style="--i: 5">64</div>
+              <div class="tile tile-32" style="--i: 6">32</div>
+              <div class="tile tile-16" style="--i: 7">16</div>
+              <div class="tile tile-8" style="--i: 8">8</div>
+              <div class="tile tile-4" style="--i: 9">4</div>
+              <div class="tile tile-2" style="--i: 10">2</div>
+              <div class="tile tile-empty" style="--i: 11"></div>
+              <div class="tile tile-empty" style="--i: 12"></div>
+              <div class="tile tile-empty" style="--i: 13"></div>
+              <div class="tile tile-empty" style="--i: 14"></div>
+              <div class="tile tile-empty" style="--i: 15"></div>
+            </div>
+            <div class="game-bottom">
+              <span class="episode-chip">第 4 集 · 左</span>
+              <span>在播放器中选集操作</span>
+            </div>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <strong>1280 × 720</strong>
+              <span>30fps H.264</span>
+            </div>
+            <div class="hero-stat">
+              <strong>7 个选集</strong>
+              <span>完整操作</span>
+            </div>
+            <div class="hero-stat">
+              <strong>独立存档</strong>
+              <span>多人分开游玩</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="how">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <p class="kicker">How it works</p>
+              <h2>选集不是剧集，是按键。</h2>
+              <p class="section-intro">
+                Rex 把七个操作识别成七集。选中某一集，模块向服务端提交一次命令；服务端更新棋局并推出一条新的视频流。
+              </p>
+            </div>
+            <div class="section-aside">
+              不需要记住复杂快捷键<br />
+              播放器原生选集面板即可操作
+            </div>
+          </div>
+
+          <div class="controls-layout">
+            <div class="episode-table">
+              <div class="episode-row is-accent">
+                <span class="episode-key">1</span>
+                <div>
+                  <div class="episode-name">开局</div>
+                  <div class="episode-desc">重置棋盘并开始新一局</div>
+                </div>
+                <span class="episode-tag">NEW GAME</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">2</span>
+                <div>
+                  <div class="episode-name">上</div>
+                  <div class="episode-desc">所有方块向上移动</div>
+                </div>
+                <span class="episode-tag">UP</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">3</span>
+                <div>
+                  <div class="episode-name">下</div>
+                  <div class="episode-desc">所有方块向下移动</div>
+                </div>
+                <span class="episode-tag">DOWN</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">4</span>
+                <div>
+                  <div class="episode-name">左</div>
+                  <div class="episode-desc">所有方块向左移动</div>
+                </div>
+                <span class="episode-tag">LEFT</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">5</span>
+                <div>
+                  <div class="episode-name">右</div>
+                  <div class="episode-desc">所有方块向右移动</div>
+                </div>
+                <span class="episode-tag">RIGHT</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">6</span>
+                <div>
+                  <div class="episode-name">重复</div>
+                  <div class="episode-desc">再次执行上一个方向</div>
+                </div>
+                <span class="episode-tag">REPEAT</span>
+              </div>
+              <div class="episode-row">
+                <span class="episode-key">7</span>
+                <div>
+                  <div class="episode-name">撤销</div>
+                  <div class="episode-desc">回到上一步</div>
+                </div>
+                <span class="episode-tag">UNDO</span>
+              </div>
+            </div>
+
+            <aside class="how-card">
+              <h3>从打开到落子</h3>
+              <ol class="step-list">
+                <li>
+                  <span class="step-num">1</span>
+                  <div><strong>导入模块</strong>点击“导入到 Rex”，在 Rex 确认框中完成导入。</div>
+                </li>
+                <li>
+                  <span class="step-num">2</span>
+                  <div><strong>确认服务端</strong>通过本页导入时，模块会自动使用当前服务端地址。</div>
+                </li>
+                <li>
+                  <span class="step-num">3</span>
+                  <div><strong>加入首页</strong>把 Rex 2048 添加到首页，然后打开播放。</div>
+                </li>
+                <li>
+                  <span class="step-num">4</span>
+                  <div><strong>开始操作</strong>在播放器内打开选集，选择 1 开局，再用 2–7 操作。</div>
+                </li>
+              </ol>
+              <p>
+                退出播放器后重新打开模块即可继续当前棋局。不要点第 1 集，除非你想重新开局。
+              </p>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Built for Rex</p>
+              <h2>为播放器而生的 2048。</h2>
+              <p class="section-intro">
+                它不只是一段视频。每一局都有独立状态、动画、音效和持久化进度，服务端负责渲染，Rex 负责播放。
+              </p>
+            </div>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-icon">◈</span>
+              <h3>实时棋盘</h3>
+              <p>服务端维护 4×4 棋盘、合并、计分、撤销和胜负状态，画面持续更新。</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon">↯</span>
+              <h3>硬件编码</h3>
+              <p>优先使用 VideoToolbox、NVENC 或 VAAPI；没有硬件时自动回退 libx264。</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon">◎</span>
+              <h3>独立棋局</h3>
+              <p>每个 Rex 安装生成自己的匿名 token，多人可以各自游玩，互不影响。</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon">文</span>
+              <h3>三语界面</h3>
+              <p>简体中文、English、繁體中文，默认简体中文，棋盘文案与选集标题同步切换。</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon">⌁</span>
+              <h3>退出可续玩</h3>
+              <p>棋局和分数写入服务端存储，重新打开模块会回到当前进度，不用从头开始。</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-icon">✦</span>
+              <h3>小恐龙与彩蛋</h3>
+              <p>像素小恐龙、滑动合并动画、不同方向音效，以及一个值得自己发现的隐藏结局。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="deploy">
+        <div class="shell">
+          <div class="section-head">
+            <div>
+              <p class="kicker">Run it</p>
+              <h2>本机、局域网或 Docker，都能跑。</h2>
+              <p class="section-intro">
+                默认只需要公开 API 端口 18081；视频流和 RTMP 留在服务端内部。公网通过 ESA 时固定 PUBLIC_BASE_URL，并只回源 18081。
+              </p>
+            </div>
+            <div class="section-aside">
+              当前服务端<br />
+              <span id="server-origin">正在读取…</span>
+            </div>
+          </div>
+
+          <div class="deploy-grid">
+            <article class="deploy-card">
+              <h3>本地原生运行</h3>
+              <p>适合在 Mac 上直接测试，优先使用 VideoToolbox 硬件编码。</p>
+              <div class="terminal">
+                <code>npm install
+npm run server</code>
+              </div>
+              <div class="deploy-note">需要 Node.js 20+ 与 FFmpeg。默认地址：<code id="local-origin">http://127.0.0.1:18081</code></div>
+            </article>
+            <article class="deploy-card">
+              <h3>Docker 局域网部署</h3>
+              <p>单容器运行 API、NMS、FFmpeg 与 Canvas，适合多台 Rex 设备共享。</p>
+              <div class="terminal">
+                <code>cp .env.example .env
+docker compose up -d --build</code>
+              </div>
+              <div class="deploy-note">建议设置 <code>ADMIN_TOKEN</code>；IPv6 回源用 <code>API_BIND=::</code> 和 <code>API_PUBLISH=[::]:18081</code>。</div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="shell section" id="install">
+        <div class="import-section">
+          <div>
+            <p class="kicker">Install</p>
+            <h2>现在就把棋盘带进 Rex。</h2>
+            <p>
+              导入链接会调用 Rex 的模块导入确认框。模块会默认使用
+              <code id="server-hint">当前页面地址</code>
+              作为服务端地址，导入后加入首页即可开始。
+            </p>
+          </div>
+          <div class="import-actions">
+            <a class="btn btn-primary" id="import-rex-bottom" href="#install">导入到 Rex</a>
+            <button class="btn btn-ghost" id="copy-import" type="button">复制导入链接</button>
+            <small>需要 macOS 上的 Rex 1.1+。若浏览器没有唤起 Rex，请复制模块地址，在“设置 → 模块 → 导入的模块”中手动添加。</small>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell footer">
+      <span>Rex 2048 · 用选集面板下棋</span>
+      <div class="footer-links">
+        <a href="/api/health">服务状态</a>
+        <a href="/debug">调试面板</a>
+        <a href="#top">回到顶部</a>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const moduleUrl = new URL("/module/rex-2048.js", location.href).href;
+      const importUrl = `rex://widget?url=${encodeURIComponent(
+        moduleUrl
+      )}&widgetID=rex.2048.live`;
+      const serverOrigin = location.origin;
+      const moduleUrlEl = document.querySelector("#module-url");
+      const moduleStatusEl = document.querySelector("#module-status");
+      const serverOriginEl = document.querySelector("#server-origin");
+      const serverHintEl = document.querySelector("#server-hint");
+      const toastEl = document.querySelector("#toast");
+      const importLinks = [
+        document.querySelector("#import-rex"),
+        document.querySelector("#import-rex-bottom"),
+      ];
+      let toastTimer = null;
+
+      moduleUrlEl.textContent = moduleUrl;
+      serverOriginEl.textContent = serverOrigin;
+      serverHintEl.textContent = serverOrigin;
+
+      for (const link of importLinks) {
+        link.href = importUrl;
+        link.addEventListener("click", () => {
+          showToast("已唤起 Rex，请在确认框中选择“导入”。");
+        });
+      }
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toastEl.classList.remove("is-visible");
+        }, 2800);
+      }
+
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_error) {
+          const input = document.createElement("textarea");
+          input.value = text;
+          input.setAttribute("readonly", "");
+          input.style.position = "fixed";
+          input.style.opacity = "0";
+          document.body.append(input);
+          input.select();
+          const copied = document.execCommand("copy");
+          input.remove();
+          return copied;
+        }
+      }
+
+      async function copyModule(button) {
+        const copied = await copyText(moduleUrl);
+        const original = button.textContent;
+        button.textContent = copied ? "已复制" : "复制失败";
+        showToast(copied ? "模块地址已复制。" : "复制失败，请手动选择地址。");
+        setTimeout(() => {
+          button.textContent = original;
+        }, 1600);
+      }
+
+      document.querySelector("#copy-module").addEventListener("click", (event) => {
+        void copyModule(event.currentTarget);
+      });
+      document.querySelector("#copy-module-small").addEventListener("click", (event) => {
+        void copyModule(event.currentTarget);
+      });
+      document.querySelector("#copy-import").addEventListener("click", async (event) => {
+        const copied = await copyText(importUrl);
+        event.currentTarget.textContent = copied ? "已复制导入链接" : "复制失败";
+        showToast(copied ? "导入链接已复制。" : "复制失败，请手动复制。");
+        setTimeout(() => {
+          event.currentTarget.textContent = "复制导入链接";
+        }, 1600);
+      });
+
+      fetch(moduleUrl, { method: "HEAD", cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          moduleStatusEl.classList.add("is-ready");
+          moduleStatusEl.querySelector("span:last-child").textContent =
+            "模块已就绪，可直接导入 Rex。";
+        })
+        .catch(() => {
+          moduleStatusEl.classList.add("is-error");
+          moduleStatusEl.querySelector("span:last-child").textContent =
+            "模块尚未构建：先在项目目录运行 npm run build。";
+          for (const link of importLinks) {
+            link.classList.add("is-disabled");
+            link.setAttribute("aria-disabled", "true");
+          }
+        });
+    </script>
+  </body>
+</html>

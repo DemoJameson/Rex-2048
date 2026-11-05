@@ -1,0 +1,4 @@
+services:
+  rex2048:
+    devices:
+      - /dev/dri:/dev/dri

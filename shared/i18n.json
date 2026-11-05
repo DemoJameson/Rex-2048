@@ -1,0 +1,167 @@
+{
+  "defaultLanguage": "zh-Hans",
+  "languages": ["zh-Hans", "en", "zh-Hant"],
+  "ui": {
+    "zh-Hans": {
+      "widgetTitle": "Rex 2048",
+      "widgetDescription": "Rex 2048 是一个把经典数字合并游戏带进 Rex 的实验。棋盘由服务端实时渲染成视频，播放器里的选集面板就是控制器，不需要手柄、键盘映射或额外客户端。",
+      "playModuleTitle": "2048",
+      "playModuleDescription": "打开后使用播放器内的选集面板操作",
+      "streamModuleTitle": "加载播放资源",
+      "serverParam": "服务端地址",
+      "languageParam": "界面语言",
+      "languageZhHans": "简体中文",
+      "languageEn": "English",
+      "languageZhHant": "繁體中文",
+      "boardSubtitle": "棋盘",
+      "score": "分数",
+      "best": "最高分",
+      "lastMove": "上一步",
+      "moveNumber": "步数",
+      "playing": "进行中",
+      "gameOver": "游戏结束",
+      "won": "达成 2048！继续挑战",
+      "maxScoreEnding": "最高分结局",
+      "maxScoreHint": "全满棋盘 · 131072",
+      "gameDescription": "一款用播放器选集控制的数字合并游戏：合并相同数字，挑战 2048 和更高分。通过在播放器中选集进行操作。",
+      "selectEpisode": "通过在播放器中选集进行操作",
+      "episodeLabel": "第 {n} 集"
+    },
+    "en": {
+      "widgetTitle": "Rex 2048",
+      "widgetDescription": "Rex 2048 is an experiment that brings the classic number-merging game into Rex. The board is rendered server-side into a real-time video. The episode picker in the player is the controller—no gamepad, keyboard mapping, or extra client required.",
+      "playModuleTitle": "2048",
+      "playModuleDescription": "Use the player's episode picker to control the board",
+      "streamModuleTitle": "Load stream",
+      "serverParam": "Server URL",
+      "languageParam": "Language",
+      "languageZhHans": "简体中文",
+      "languageEn": "English",
+      "languageZhHant": "繁體中文",
+      "boardSubtitle": "BOARD",
+      "score": "SCORE",
+      "best": "BEST",
+      "lastMove": "LAST MOVE",
+      "moveNumber": "MOVES",
+      "playing": "PLAYING",
+      "gameOver": "GAME OVER",
+      "won": "2048! KEEP GOING",
+      "maxScoreEnding": "MAX SCORE ENDING",
+      "maxScoreHint": "FULL BOARD · 131072",
+      "gameDescription": "A number-merging game controlled by the player's episode picker: combine matching tiles and chase 2048 and a higher score. Control the game by selecting episodes in the player.",
+      "selectEpisode": "Control the game by selecting episodes in the player",
+      "episodeLabel": "Episode {n}"
+    },
+    "zh-Hant": {
+      "widgetTitle": "Rex 2048",
+      "widgetDescription": "Rex 2048 是一個把經典數字合併遊戲帶進 Rex 的實驗。棋盤由伺服器即時渲染成影片，播放器裡的選集面板就是控制器，不需要手把、鍵盤映射或額外用戶端。",
+      "playModuleTitle": "2048",
+      "playModuleDescription": "開啟後使用播放器內的選集面板操作",
+      "streamModuleTitle": "載入播放資源",
+      "serverParam": "伺服器位址",
+      "languageParam": "介面語言",
+      "languageZhHans": "簡體中文",
+      "languageEn": "English",
+      "languageZhHant": "繁體中文",
+      "boardSubtitle": "棋盤",
+      "score": "分數",
+      "best": "最高分",
+      "lastMove": "上一步",
+      "moveNumber": "步數",
+      "playing": "進行中",
+      "gameOver": "遊戲結束",
+      "won": "達成 2048！繼續挑戰",
+      "maxScoreEnding": "最高分結局",
+      "maxScoreHint": "全滿棋盤 · 131072",
+      "gameDescription": "一款用播放器選集控制的數字合併遊戲：合併相同數字，挑戰 2048 和更高分。透過在播放器中選集進行操作。",
+      "selectEpisode": "透過在播放器中選集進行操作",
+      "episodeLabel": "第 {n} 集"
+    }
+  },
+  "episodes": {
+    "1": {
+      "title": {
+        "zh-Hans": "开局",
+        "en": "New Game",
+        "zh-Hant": "開局"
+      },
+      "description": {
+        "zh-Hans": "重置棋盘并开始新局",
+        "en": "Reset the board and start a new game",
+        "zh-Hant": "重置棋盤並開始新局"
+      }
+    },
+    "2": {
+      "title": {
+        "zh-Hans": "上",
+        "en": "Up",
+        "zh-Hant": "上"
+      },
+      "description": {
+        "zh-Hans": "所有方块向上移动",
+        "en": "Move all tiles up",
+        "zh-Hant": "所有方塊向上移動"
+      }
+    },
+    "3": {
+      "title": {
+        "zh-Hans": "下",
+        "en": "Down",
+        "zh-Hant": "下"
+      },
+      "description": {
+        "zh-Hans": "所有方块向下移动",
+        "en": "Move all tiles down",
+        "zh-Hant": "所有方塊向下移動"
+      }
+    },
+    "4": {
+      "title": {
+        "zh-Hans": "左",
+        "en": "Left",
+        "zh-Hant": "左"
+      },
+      "description": {
+        "zh-Hans": "所有方块向左移动",
+        "en": "Move all tiles left",
+        "zh-Hant": "所有方塊向左移動"
+      }
+    },
+    "5": {
+      "title": {
+        "zh-Hans": "右",
+        "en": "Right",
+        "zh-Hant": "右"
+      },
+      "description": {
+        "zh-Hans": "所有方块向右移动",
+        "en": "Move all tiles right",
+        "zh-Hant": "所有方塊向右移動"
+      }
+    },
+    "6": {
+      "title": {
+        "zh-Hans": "重复",
+        "en": "Repeat",
+        "zh-Hant": "重複"
+      },
+      "description": {
+        "zh-Hans": "再次执行上一个方向",
+        "en": "Repeat the previous direction",
+        "zh-Hant": "再次執行上一個方向"
+      }
+    },
+    "7": {
+      "title": {
+        "zh-Hans": "撤销",
+        "en": "Undo",
+        "zh-Hant": "復原"
+      },
+      "description": {
+        "zh-Hans": "回到上一步",
+        "en": "Go back one move",
+        "zh-Hant": "回到上一步"
+      }
+    }
+  }
+}

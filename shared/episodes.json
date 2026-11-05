@@ -1,0 +1,44 @@
+[
+  {
+    "episode": 1,
+    "command": "new",
+    "title": "开局",
+    "description": "重置棋盘并开始新局"
+  },
+  {
+    "episode": 2,
+    "command": "up",
+    "title": "上",
+    "description": "所有方块向上移动"
+  },
+  {
+    "episode": 3,
+    "command": "down",
+    "title": "下",
+    "description": "所有方块向下移动"
+  },
+  {
+    "episode": 4,
+    "command": "left",
+    "title": "左",
+    "description": "所有方块向左移动"
+  },
+  {
+    "episode": 5,
+    "command": "right",
+    "title": "右",
+    "description": "所有方块向右移动"
+  },
+  {
+    "episode": 6,
+    "command": "repeat",
+    "title": "重复",
+    "description": "再次执行上一个方向"
+  },
+  {
+    "episode": 7,
+    "command": "undo",
+    "title": "撤销",
+    "description": "回到上一步"
+  }
+]

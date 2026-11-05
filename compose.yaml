@@ -1,0 +1,29 @@
+services:
+  rex2048:
+    build:
+      context: .
+    image: rex-2048:local
+    container_name: rex-2048
+    restart: unless-stopped
+    ports:
+      - "${API_PUBLISH:-0.0.0.0:18081}:18081"
+    environment:
+      API_BIND: "${API_BIND:-0.0.0.0}"
+      API_PORT: 18081
+      FLV_PORT: 18080
+      RTMP_PORT: 1935
+      FLV_BASE_URL: http://127.0.0.1:18080
+      PUBLIC_BASE_URL: "${PUBLIC_BASE_URL:-}"
+      TRUST_PROXY: "${TRUST_PROXY:-0}"
+      MAX_SESSIONS: ${MAX_SESSIONS:-128}
+      MAX_ACTIVE_STREAMS: ${MAX_ACTIVE_STREAMS:-16}
+      STREAM_ENCODER: ${STREAM_ENCODER:-auto}
+      ENABLE_PROGRESS_RESET: "0"
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+      TZ: Asia/Shanghai
+    volumes:
+      - rex2048-data:/app/.data
+    stop_grace_period: 10s
+
+volumes:
+  rex2048-data:
